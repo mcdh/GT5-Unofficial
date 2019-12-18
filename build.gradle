@@ -1,5 +1,6 @@
 buildscript {
     repositories {
+        mavenLocal()
         mavenCentral()
         maven {
             name = "forge"
@@ -11,7 +12,23 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:1.2-SNAPSHOT'
+        classpath 'org.ow2.asm:asm-debug-all:5.0.3'
+        classpath 'com.google.guava:guava:18.0'
+        classpath 'net.sf.opencsv:opencsv:2.3' // reading CSVs.. also used by SpecialSource
+        classpath 'com.cloudbees:diff4j:1.1' // for difing and patching
+        classpath 'com.github.abrarsyed.jastyle:jAstyle:1.2' // formatting
+        classpath 'net.sf.trove4j:trove4j:2.1.0' // because its awesome.
+        classpath 'com.github.jponge:lzma-java:1.3' // replaces the LZMA binary
+        classpath 'com.nothome:javaxdelta:2.0.1' // GDIFF implementation for BinPatches
+        classpath 'com.google.code.gson:gson:2.2.4' // Used instead of Argo for buuilding changelog.
+        classpath 'com.github.tony19:named-regexp:0.2.3' // 1.7 Named regexp features
+        classpath 'net.md-5:SpecialSource:1.7.3' // deobf and reobs
+        classpath 'org.apache.httpcomponents:httpclient:4.3.3'
+        classpath 'org.apache.httpcomponents:httpmime:4.3.3'
+        classpath 'de.oceanlabs.mcp:RetroGuard:3.6.6'
+        classpath 'de.oceanlabs.mcp:mcinjector:3.2-SNAPSHOT'
+        classpath 'net.minecraftforge.srg2source:Srg2Source:3.2-SNAPSHOT'
+        classpath 'net.minecraftforge.gradle:ForgeGradle:1.2-CUSTOM'
     }
 }
 
@@ -29,11 +46,7 @@ version = "${config.gt.version}"
 group= "gregtech"
 archivesBaseName = "gregtech"
 
-
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = targetCompatibility = 1.8
 
 minecraft {
     version = "${config.minecraft.version}-${config.forge.version}"
@@ -50,10 +63,11 @@ configurations {
 }
 
 repositories {
-    maven {
-        name 'Forge'
-        url 'http://files.minecraftforge.net/maven'
-    }
+    mavenLocal()
+//    maven {
+//        name 'Forge'
+//        url 'http://files.minecraftforge.net/maven'
+//    }
     maven {
         name = "chickenbones"
         url = "http://chickenbones.net/maven/"
@@ -96,11 +110,11 @@ dependencies {
 	provided ("appeng:appliedenergistics2:${config.ae2.version}:dev") {
         exclude module: '*'
     }
-    provided "codechicken:CodeChickenLib:${config.minecraft.version}-${config.codechickenlib.version}:dev"
-    provided "codechicken:CodeChickenCore:${config.minecraft.version}-${config.codechickencore.version}:dev"
-    provided "codechicken:NotEnoughItems:${config.minecraft.version}-${config.nei.version}:dev"
+//    provided "codechicken:CodeChickenLib:${config.minecraft.version}-${config.codechickenlib.version}:dev"
+//    provided "codechicken:CodeChickenCore:${config.minecraft.version}-${config.codechickencore.version}:dev"
+//    provided "codechicken:NotEnoughItems:${config.minecraft.version}-${config.nei.version}:dev"
     provided "codechicken:Translocator:${config.minecraft.version}-${config.translocators.version}:dev"
-    provided "net.industrial-craft:industrialcraft-2:${config.ic2.version}:dev"
+//    provided "net.industrial-craft:industrialcraft-2:${config.ic2.version}:dev"
     provided "net.sengir.forestry:forestry_${config.minecraft.version}:${config.forestry.version}:dev"
     provided "applecore:AppleCore:${config.applecore.version}:api"
     provided "com.enderio.core:EnderCore:${config.enderiocore.version}:dev"
@@ -111,12 +125,13 @@ dependencies {
     compile files("libs/GalacticraftCore-Dev-${config.gc.version}.jar")
     provided name: "Galacticraft-API", version: config.gc.version, ext: 'jar'
     provided name: "GalacticraftCore-Dev", version: config.gc.version, ext: 'jar'
-    provided name: 'CoFHLib', version: config.cofhlib.version, ext: 'jar'
-    provided name: 'CoFHCore', version: config.cofhcore.version, ext: 'jar'
+//    provided name: 'CoFHLib', version: config.cofhlib.version, ext: 'jar'
+//    provided name: 'CoFHCore', version: config.cofhcore.version, ext: 'jar'
     provided name: 'Railcraft', version: config.railcraft.version, ext: 'jar'
     provided name: 'IC2NuclearControl', version: config.nc.version, ext: 'jar'
   //provided name: 'ImmersiveEngineering', version: config.immeng.version, ext: 'jar'
   //provided name: 'magneticraft', version: config.magneticraft.version, ext: 'jar'
+  compile fileTree(dir: "libs/", includes: ['*.jar'])
 }
 
 processResources

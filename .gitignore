@@ -93,3 +93,6 @@ libs/
 *.log
 *.jar
 *.errored
+
+libs
+libs/

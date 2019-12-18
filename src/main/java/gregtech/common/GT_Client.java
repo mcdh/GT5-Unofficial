@@ -313,28 +313,12 @@ public class GT_Client extends GT_Proxy
 
     public void onPostLoad() {
         super.onPostLoad();
-        try {
-            label0:
-            for (int i = 1; i < GregTech_API.METATILEENTITIES.length; i++)
-                do {
-                    if (i >= GregTech_API.METATILEENTITIES.length)
-                        continue label0;
-                    if (GregTech_API.METATILEENTITIES[i] != null)
-                        GregTech_API.METATILEENTITIES[i].getStackForm(1L).getTooltip(null, true);
-                    i++;
-                } while (true);
-        } catch (Throwable e) {e.printStackTrace(GT_Log.err);}
-
-
-//        super.onPostLoad();
-//
-//            for (int i = 1; i < GregTech_API.METATILEENTITIES.length; i++) {
-//              try {
-//                for (; i < GregTech_API.METATILEENTITIES.length; i++) if (GregTech_API.METATILEENTITIES[i] != null) GregTech_API.METATILEENTITIES[i].getStackForm(1L).getTooltip(null, true);
-//              } catch (Throwable e) {
-//                e.printStackTrace(GT_Log.err);
-//              }
-//            }
+        Arrays
+         .stream(GregTech_API.METATILEENTITIES)
+         .parallel()
+         .filter(Objects::nonNull)
+         .peek(e -> e.getStackForm(1L).getTooltip(null, true))
+         .close();
     }
 
     public void run() {

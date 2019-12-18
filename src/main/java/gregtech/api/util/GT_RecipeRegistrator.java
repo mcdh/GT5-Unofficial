@@ -281,7 +281,7 @@ public class GT_RecipeRegistrator {
      * @param aOutput          the Dust you usually get from macerating aMat
      * @param aRecipeReplacing allows to replace the Recipe with a Plate variant
      */
-    public static synchronized void registerUsagesForMaterials(ItemStack aMat, String aPlate, boolean aRecipeReplacing) {
+    public static void registerUsagesForMaterials(ItemStack aMat, String aPlate, boolean aRecipeReplacing) {
         if (aMat == null) return;
         aMat = GT_Utility.copy(aMat);
         ItemStack tStack;

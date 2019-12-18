@@ -46,6 +46,7 @@ import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemBow;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.CraftingManager;
+import net.minecraft.item.crafting.FurnaceRecipes;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.potion.Potion;
@@ -72,17 +73,20 @@ import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.oredict.OreDictionary;
-import net.minecraftforge.oredict.RecipeSorter;
-import net.minecraftforge.oredict.ShapedOreRecipe;
-import net.minecraftforge.oredict.ShapelessOreRecipe;
+import net.minecraftforge.oredict.*;
 import org.apache.commons.lang3.text.WordUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cliffc.high_scale_lib.NonBlockingHashMap;
+import org.cliffc.high_scale_lib.NonBlockingHashSet;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
+import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class GT_Proxy implements IGT_Mod, IGuiHandler, IFuelHandler {
     private static final EnumSet<OreGenEvent.GenerateMinable.EventType> PREVENTED_ORES = EnumSet.of(OreGenEvent.GenerateMinable.EventType.COAL,
@@ -547,38 +551,43 @@ public abstract class GT_Proxy implements IGT_Mod, IGuiHandler, IFuelHandler {
             }
         } catch (Throwable e) {e.printStackTrace(GT_Log.err);}
         GT_Log.out.println("GT_Mod: Adding Tool Usage Crafting Recipes for OreDict Items.");
-        for (Materials aMaterial : Materials.values()) {
-            if ((aMaterial.mUnificatable) && (aMaterial.mMaterialInto == aMaterial)) {
-                GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dust, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
-                        'X', OrePrefixes.crushedCentrifuged.get(aMaterial)});
-                GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dust, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
-                        'X', OrePrefixes.crystalline.get(aMaterial)});
-                GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dust, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
-                        'X', OrePrefixes.crystal.get(aMaterial)});
-                GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dustPure, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
-                        'X', OrePrefixes.crushedPurified.get(aMaterial)});
-                GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dustPure, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
-                        'X', OrePrefixes.cleanGravel.get(aMaterial)});
-                GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dustPure, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
-                        'X', OrePrefixes.reduced.get(aMaterial)});
-                GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dustImpure, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
-                        'X', OrePrefixes.clump.get(aMaterial)});
-                GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dustImpure, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
-                        'X', OrePrefixes.shard.get(aMaterial)});
-                GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dustImpure, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
-                        'X', OrePrefixes.crushed.get(aMaterial)});
-                GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dustImpure, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
-                        'X', OrePrefixes.dirtyGravel.get(aMaterial)});
-                GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dustSmall, aMaterial, 4L), tBits,
-                        new Object[]{" X", "  ", 'X', OrePrefixes.dust.get(aMaterial)});
-                GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dustTiny, aMaterial, 9L), tBits,
-                        new Object[]{"X ", "  ", 'X', OrePrefixes.dust.get(aMaterial)});
-                GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dust, aMaterial, 1L), tBits,
-                        new Object[]{"XX", "XX", 'X', OrePrefixes.dustSmall.get(aMaterial)});
-                GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dust, aMaterial, 1L), tBits,
-                        new Object[]{"XXX", "XXX", "XXX", 'X', OrePrefixes.dustTiny.get(aMaterial)});
-            }
-        }
+        Arrays
+         .stream(Materials.values())
+         //TODO check this
+         .parallel()
+         .peek(aMaterial -> {
+             if ((aMaterial.mUnificatable) && (aMaterial.mMaterialInto == aMaterial)) {
+                 GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dust, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
+                  'X', OrePrefixes.crushedCentrifuged.get(aMaterial)});
+                 GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dust, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
+                  'X', OrePrefixes.crystalline.get(aMaterial)});
+                 GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dust, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
+                  'X', OrePrefixes.crystal.get(aMaterial)});
+                 GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dustPure, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
+                  'X', OrePrefixes.crushedPurified.get(aMaterial)});
+                 GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dustPure, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
+                  'X', OrePrefixes.cleanGravel.get(aMaterial)});
+                 GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dustPure, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
+                  'X', OrePrefixes.reduced.get(aMaterial)});
+                 GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dustImpure, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
+                  'X', OrePrefixes.clump.get(aMaterial)});
+                 GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dustImpure, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
+                  'X', OrePrefixes.shard.get(aMaterial)});
+                 GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dustImpure, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
+                  'X', OrePrefixes.crushed.get(aMaterial)});
+                 GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dustImpure, aMaterial.mMacerateInto, 1L), tBits, new Object[]{"h", "X",
+                  'X', OrePrefixes.dirtyGravel.get(aMaterial)});
+                 GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dustSmall, aMaterial, 4L), tBits,
+                  new Object[]{" X", "  ", 'X', OrePrefixes.dust.get(aMaterial)});
+                 GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dustTiny, aMaterial, 9L), tBits,
+                  new Object[]{"X ", "  ", 'X', OrePrefixes.dust.get(aMaterial)});
+                 GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dust, aMaterial, 1L), tBits,
+                  new Object[]{"XX", "XX", 'X', OrePrefixes.dustSmall.get(aMaterial)});
+                 GT_ModHandler.addCraftingRecipe(GT_OreDictUnificator.get(OrePrefixes.dust, aMaterial, 1L), tBits,
+                  new Object[]{"XXX", "XXX", "XXX", 'X', OrePrefixes.dustTiny.get(aMaterial)});
+             }
+         })
+         .close();
     }
 
     public void onServerStarting() {
@@ -613,23 +622,44 @@ public abstract class GT_Proxy implements IGT_Mod, IGuiHandler, IFuelHandler {
 
         GT_Log.out.println("GT_Mod: Cleaning up all OreDict Crafting Recipes, which have an empty List in them, since they are never meeting any Condition.");
         List tList = CraftingManager.getInstance().getRecipeList();
-        for (int i = 0; i < tList.size(); i++) {
-            if ((tList.get(i) instanceof ShapedOreRecipe)) {
-                for (Object tObject : ((ShapedOreRecipe) tList.get(i)).getInput()) {
-                    if (((tObject instanceof List)) && (((List) tObject).isEmpty())) {
-                        tList.remove(i--);
-                        break;
-                    }
-                }
-            } else if ((tList.get(i) instanceof ShapelessOreRecipe)) {
-                for (Object tObject : ((ShapelessOreRecipe) tList.get(i)).getInput()) {
-                    if (((tObject instanceof List)) && (((List) tObject).isEmpty())) {
-                        tList.remove(i--);
-                        break;
-                    }
-                }
-            }
-        }
+//        for (int i = 0; i < tList.size(); i++) {
+//            if ((tList.get(i) instanceof ShapedOreRecipe)) {
+//                for (Object tObject : ((ShapedOreRecipe) tList.get(i)).getInput()) {
+//                    if (((tObject instanceof List)) && (((List) tObject).isEmpty())) {
+//                        tList.remove(i--);
+//                        break;
+//                    }
+//                }
+//            } else if ((tList.get(i) instanceof ShapelessOreRecipe)) {
+//                for (Object tObject : ((ShapelessOreRecipe) tList.get(i)).getInput()) {
+//                    if (((tObject instanceof List)) && (((List) tObject).isEmpty())) {
+//                        tList.remove(i--);
+//                        break;
+//                    }
+//                }
+//            }
+//        }
+        final NonBlockingHashSet<Object> toRemove = new NonBlockingHashSet<>();
+        tList
+         .parallelStream()
+         .peek(obj -> {
+             Object[] tObj = null;
+             if (obj instanceof ShapedOreRecipe) {
+                 tObj = ((ShapedOreRecipe)obj).getInput();
+             } else if (obj instanceof ShapelessOreRecipe) {
+                 tObj = ((ShapelessOreRecipe)obj).getInput().toArray();
+             }
+             if (tObj != null) {
+                 final List<Object> tr = Arrays
+                  .stream(tObj)
+                  .parallel()
+                  .filter(x -> x instanceof List && ((List)x).isEmpty())
+                  .collect(Collectors.toList());
+                 toRemove.addAll(tr);
+             }
+         })
+         .close();
+        tList.removeAll(toRemove);
     }
 
     public void onServerStopping() {
@@ -1893,26 +1923,154 @@ public abstract class GT_Proxy implements IGT_Mod, IGuiHandler, IFuelHandler {
         GT_Recipe.reInit();
     }
 
-    public void activateOreDictHandler() {
-        final Logger GT_FML_LOGGER = LogManager.getLogger("GregTech GTNH");
-        
-        this.mOreDictActivated = true;
-        ProgressManager.ProgressBar progressBar = ProgressManager.push("Register materials", mEvents.size());
-        int sizeStep = mEvents.size()/20-1;
-        int size = 5;
-        OreDictEventContainer tEvent;
-        for (Iterator i$ = this.mEvents.iterator(); i$.hasNext(); registerRecipes(tEvent)) {
-            tEvent = (OreDictEventContainer) i$.next();
-            sizeStep--;
-            progressBar.step(tEvent.mMaterial == null ? "" : tEvent.mMaterial.toString());
-            if( sizeStep == 0 )
-                {
-                    GT_FML_LOGGER.info("Baking : " + size + "%", new Object[0]);
-                    sizeStep = mEvents.size()/20-1;
-                    size += 5;
-                }
+    private static void patchFurnaceRecipes() {
+        Field smeltingList;
+        try {
+            smeltingList = FurnaceRecipes.class.getDeclaredField("smeltingList");
+        } catch (NoSuchFieldException e) {
+            try {
+                smeltingList = FurnaceRecipes.class.getDeclaredField("field_77604_b");
+            } catch (Throwable t) {
+                throw new RuntimeException("Could not find smeltingList field in FurnaceRecipes!", t.initCause(e));
+            }
         }
-        ProgressManager.pop(progressBar);
+
+        try {
+            smeltingList.setAccessible(true);
+            final NonBlockingHashMap map = new NonBlockingHashMap();
+            final FurnaceRecipes inst = FurnaceRecipes.smelting();
+            map.putAll(inst.getSmeltingList());
+            smeltingList.set(inst, map);
+            smeltingList.setAccessible(false);
+        } catch (Throwable t) {
+            throw new RuntimeException("Failed to patch FurnaceRecipes!", t);
+        }
+    }
+
+    private static void patchCraftingManager() {
+        Field recipes;
+        try {
+            recipes = CraftingManager.class.getDeclaredField("recipes");
+        } catch (NoSuchFieldException e) {
+            try {
+                recipes = CraftingManager.class.getDeclaredField("field_77597_b");
+            } catch (Throwable t) {
+                throw new RuntimeException("Could not find recipes field in CraftingManager!", t.initCause(e));
+            }
+        }
+
+        try {
+            recipes.setAccessible(true);
+            final CraftingManager inst = CraftingManager.getInstance();
+            final NonBlockingHashSet set = new NonBlockingHashSet();
+            set.addAll((List)recipes.get(inst));
+            recipes.set(inst, new SpecialArrayList(set));
+            recipes.setAccessible(false);
+        } catch (Throwable t) {
+            throw new RuntimeException("Failed to patch CraftingManager!", t);
+        }
+    }
+
+    public void activateOreDictHandler() {
+        //TODO patch furnace and crafting recipes in forge
+        patchFurnaceRecipes();
+        patchCraftingManager();
+        final Logger GT_FML_LOGGER = LogManager.getLogger("GregTech GTNH");
+        this.mOreDictActivated = true;
+        final long start = System.currentTimeMillis();
+
+        final int
+         threads = Runtime.getRuntime().availableProcessors(),
+         blockSize = this.mEvents.size() / threads;
+        final LinkedList<OreDictEventContainer> events = new LinkedList<>(this.mEvents);
+        class Worker implements Runnable {
+            final int num;
+            final LinkedList<OreDictEventContainer> tasks;
+            final PrintStream ps;
+            final ProgressManager.ProgressBar bar;
+
+            public Worker(final int num, final LinkedList<OreDictEventContainer> tasks, ProgressManager.ProgressBar bar) {
+                this.num = num;
+                this.tasks = tasks;
+                this.bar = bar;
+                try {
+                    this.ps = new PrintStream(
+                     new FileOutputStream(
+                      String.format("%s%s%d%s", System.getProperty("user.dir"), "/", num, ".txt"),
+                      true
+                     )
+                    );
+                } catch (Throwable t) {
+                    throw new RuntimeException(String.format("%s%d%s", "Failed to open worker log", num, "!"), t);
+                }
+            }
+
+            @Override
+            public void run() {
+                for (final OreDictEventContainer odec : tasks) {
+                    try {
+                        bar.step(odec.mMaterial == null ? "" : odec.mMaterial.toString());
+                        registerRecipes(odec);
+                    } catch (Throwable t) {
+                        System.err.println("Worker encountered exception registering items!");
+                        t.printStackTrace(ps);
+                    }
+                }
+                ps.close();
+                Thread.currentThread().interrupt();
+            }
+        }
+        final PrintStream blocking;
+        try {
+            blocking = new PrintStream(
+             new FileOutputStream(String.format("%s%s", System.getProperty("user.dir"), "/blocking.txt"), true)
+            );
+        } catch (Throwable t) {
+            throw new RuntimeException("Error creating blocking list!", t);
+        }
+        final LinkedList<Thread> workers = new LinkedList<>();
+        final ArrayList<ProgressManager.ProgressBar> bars = new ArrayList<>();
+        for (int i = 0; i < threads; i++) {
+            int end = (i + 1) * blockSize;
+            if (end > events.size()) {
+                end = events.size();
+            }
+            final LinkedList<OreDictEventContainer> tasks = new LinkedList<>();
+            for (int j = i * blockSize; j < end; j++) {
+                tasks.add(events.get(j));
+            }
+            ProgressManager.ProgressBar bar = ProgressManager.push("Oredict Worker " + (i + 1), tasks.size());
+            bars.add(bar);
+            final Thread worker = new Thread(new Worker(i + 1, tasks, bar), "GTOreDict Worker Thread: " + i);
+            workers.add(worker);
+            worker.start();
+        }
+        boolean stillWorking = true;
+        while (stillWorking) {
+            stillWorking = false;
+            for (int i = 0; i < workers.size(); i++) {
+                final Thread.State state = workers.get(i).getState();
+//                System.out.printf("Worker %d in state: %s\n", i, state.toString());
+//                if (state == Thread.State.BLOCKED) {
+//                 blocking.println(String.format("Worker %d blocked at:\n\t%s", i, workers.get(i).getStackTrace()[0].toString()));
+//                }
+                if (state != Thread.State.TERMINATED) {
+                    stillWorking = true;
+//                    break;
+                }
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Main thread died!", e);
+            }
+            blocking.close();
+        }
+        //Clean up progress bars
+        for (int i = threads; i > 0; --i) {
+            ProgressManager.pop(bars.get(i - 1));
+        }
+        System.out.printf("OreDictionary registration took: %dms\n",(System.currentTimeMillis() - start));
     }
 
     public static final HashMap<Integer,HashMap<ChunkCoordIntPair,int []>> dimensionWiseChunkData = new HashMap<>(16);//stores chunk data that is loaded/saved
